@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type='text/javascript' src='javascript/board.js'></script>
+    <script type='text/javascript' src='javascript/pgn_reader.js'></script>
+  </head>
+  <body>
+    <canvas id='board'>
+    </canvas>
+    <script type="text/javascript" charset="utf-8">
+      board = chessBoard();
+      board.light_square = 'red';
+      board.dark_square  = '#666';
+      board.init('board');
+      board.draw();
+      //board.set();
+      reader = pgnReader();
+      reader.init(board);
+
+    </script>
+  </body>
+</html>
