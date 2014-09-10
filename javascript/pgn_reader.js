@@ -92,17 +92,34 @@ var pgnReader = function(){
         return moves;
       }
 
-      // Simple Piece movement
       if(pgn.length == 3){
-        destination = this.board[pgn.substring(1,3)];
-        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, pgn.substring(0,1)));
-        possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves(pgn.substring(0,1), square.name, side);
-          
-          if(possible_moves.indexOf(destination.name) != -1) start = square;
-        });
-        moves.push({start: start, destination: destination})
-        return moves;
+        // Power Piece movement
+        if(matches = pgn.match(/^([KQBNR])([a-h][1-8])/)){
+          destination = this.board[pgn.substring(1,3)];
+          possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, pgn.substring(0,1)));
+          possible_starting_squares.forEach(function(square){
+            possible_moves = this.board.calculatePossibleMoves(pgn.substring(0,1), square.name, side);
+            
+            if(possible_moves.indexOf(destination.name) != -1) start = square;
+          });
+          moves.push({start: start, destination: destination})
+          return moves;
+
+        }
+
+        // Pawn check
+        if(matches = pgn.match(/^([a-h]\d)\+/)){
+          destination = this.board[matches[1]];
+          possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'))
+          possible_starting_squares.forEach(function(square){
+            possible_moves = this.board.calculatePossibleMoves('P', square.name, side);
+            
+            if(possible_moves.indexOf(destination.name) != -1) start = square;
+          });
+          moves.push({start: start, destination: destination});
+          return moves;
+        }
+      
       }
 
       // Lots of possibilities are 4 characters...
@@ -149,6 +166,20 @@ var pgnReader = function(){
             });
             return moves;
         }
+      }
+
+      // Power piece movement with check
+      if(matches = pgn.match(/^([KQBNR])([a-h][1-8])\+/)){
+        destination = this.board[pgn.substring(1,3)];
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, pgn.substring(0,1)));
+        possible_starting_squares.forEach(function(square){
+          possible_moves = this.board.calculatePossibleMoves(pgn.substring(0,1), square.name, side);
+          
+          if(possible_moves.indexOf(destination.name) != -1) start = square;
+        });
+        moves.push({start: start, destination: destination})
+        return moves;
+      
       }
     }
       
