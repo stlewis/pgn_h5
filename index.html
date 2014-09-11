@@ -13,10 +13,29 @@
       board.dark_square  = '#666';
       board.init('board');
       board.draw();
-      //board.set();
+      board.set();
       reader = pgnReader();
       reader.init(board);
-
     </script>
+    <br />
+    <textarea id='pgn' style='width: 800px; height: 600px;'></textarea><br />
+    <button id='submit_pgn' onclick='parsePGN()'>Start Replay</button>
+
+    <script>
+      function parsePGN(){
+        raw    = document.getElementById('pgn').value
+        reader.parse(raw);
+
+        white_moves = reader.white_moves;
+        black_moves = reader.black_moves;
+
+        console.log(white_moves.length)
+        console.log(white_moves)
+        console.log(black_moves.length)
+      }
+    </script>
+
+
+
   </body>
 </html>

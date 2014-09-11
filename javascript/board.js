@@ -477,8 +477,9 @@ var chessBoard = function(){
     this.ctx.fillText(piece, x, y);
   },
 
-  movePiece: function(from, to, is_capture){
-    piece = from.piece;
+  movePiece: function(from, to, is_capture, promote_to, promotion_color){
+    piece = promote_to ? promote_to : from.piece;
+
     if(is_capture) this.removePiece(to);
     this.removePiece(from);
     this.placePiece(piece, to);

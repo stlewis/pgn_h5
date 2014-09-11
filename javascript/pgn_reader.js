@@ -14,7 +14,7 @@ var pgnReader = function(){
 
 
     init: function(board){
-      this.board = board 
+      this.board = board;
     
     },
     
@@ -79,109 +79,141 @@ var pgnReader = function(){
         return moves;
       }
 
-      // Pawn advancement 
-      if(pgn.length == 2){
-        destination = this.board[pgn];
-        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'))
+      // Pawn advancement with optional check or checkmate e4 e4+ e4#
+      
+      if(matches = pgn.match(/^([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[1]];
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
+        
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves('P', square.name, side);
-          
+          possible_moves = this.board.calculatePossibleMoves('P', square.name, side) 
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
+        
         moves.push({start: start, destination: destination});
+       
         return moves;
       }
-
-      if(pgn.length == 3){
-        // Power Piece movement
-        if(matches = pgn.match(/^([KQBNR])([a-h][1-8])/)){
-          destination = this.board[pgn.substring(1,3)];
-          possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, pgn.substring(0,1)));
-          possible_starting_squares.forEach(function(square){
-            possible_moves = this.board.calculatePossibleMoves(pgn.substring(0,1), square.name, side);
-            
-            if(possible_moves.indexOf(destination.name) != -1) start = square;
-          });
-          moves.push({start: start, destination: destination})
-          return moves;
-
-        }
-
-        // Pawn check
-        if(matches = pgn.match(/^([a-h]\d)\+/)){
-          destination = this.board[matches[1]];
-          possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'))
-          possible_starting_squares.forEach(function(square){
-            possible_moves = this.board.calculatePossibleMoves('P', square.name, side);
-            
-            if(possible_moves.indexOf(destination.name) != -1) start = square;
-          });
-          moves.push({start: start, destination: destination});
-          return moves;
-        }
       
-      }
-
-      // Lots of possibilities are 4 characters...
-      if(pgn.length == 4){
-       
-        //Piece movement with specific column
-        if(matches = pgn.match(/^([KQBNR])([a-h])([a-h][1-8])/)){
-          piece_code   = matches[1];
-          start_column = matches[2];
-          destination  = this.board[matches[3]];
-
-          possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, piece_code));
-          
-          start = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column }); 
-          moves.push({start: start, destination: destination});
-          return moves;
-        }
-
-        // Unambigious Piece or pawn movement to capture
-        if(matches = pgn.match(/^([KQBNR])?([a-h])?x([a-h]\d)/)){
-          if(matches[1]){ // Power piece capture
-            piece_code                = matches[1];
-            destination               = this.board[matches[3]];
-            possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, piece_code));
-            possible_starting_squares.forEach(function(square){
-              possible_moves = this.board.calculatePossibleMoves(pgn.substring(0,1), square.name, side);
-             
-              if(possible_moves.indexOf(destination.name) != -1) start = square;
-
-              moves.push({start: start, destination: destination, is_capture: true});
-            });
-            
-            return moves;
-          }else if(matches[2]){ // Pawn capture
-            piece_code                = 'P';
-            destination               = this.board[matches[3]];
-            possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, piece_code));
-            possible_starting_squares.forEach(function(square){
-              possible_moves = this.board.calculatePawnCaptures(square.name, side);
-              
-              if(possible_moves.indexOf(destination.name) != -1) start = square;
-
-              moves.push({start: start, destination: destination, is_capture: true});
-            });
-            return moves;
-        }
-      }
-
-      // Power piece movement with check
-      if(matches = pgn.match(/^([KQBNR])([a-h][1-8])\+/)){
-        destination = this.board[pgn.substring(1,3)];
-        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, pgn.substring(0,1)));
+      // Pawn advancement with capture and optional check or checkmate exf4
+      if(matches = pgn.match(/^[a-h][1-8]x([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[1]];
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
+        
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves(pgn.substring(0,1), square.name, side);
-          
+          possible_moves = this.board.calculatePawnCaptures(square.name, side) 
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
-        moves.push({start: start, destination: destination})
+        
+        moves.push({start: start, destination: destination});
+        
         return moves;
-      
       }
-    }
+      
+      // Pawn advancement with promotion e8=Q and optional check or checkmate
+      if(matches = pgn.match(/^([a-h][1-8])=([QBNR])(\+)?(\#)?$/)){
+        destination               = this.board[matches[1]];
+        promoting_piece           = this.pieceByCode(side, matches[2]);
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
+        
+        possible_starting_squares.forEach(function(square){
+          possible_moves = this.board.calculatePossibleMoves('P', square.name, side) 
+          if(possible_moves.indexOf(destination.name) != -1) start = square;
+        });
+        
+        moves.push({start: start, destination: destination, promoting_piece: promoting_piece});
+        
+        return moves;
+      }
+      
+      // Pawn advancement with capture, promotion and optional check or checkmate fxe8=Q
+      if(matches = pgn.match(/^[a-h]x([a-h][1-8])=([QBNR])(\+)?(\#)?$/)){
+        destination               = this.board[matches[1]];
+        promoting_piece           = this.pieceByCode(side, matches[2]);
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
+        
+        possible_starting_squares.forEach(function(square){
+          possible_moves = this.board.calculatePawnCaptures(square.name, side) 
+          if(possible_moves.indexOf(destination.name) != -1) start = square;
+        });
+        
+        moves.push({start: start, destination: destination, is_capture: true, promoting_piece: promoting_piece});
+        
+        return moves;
+      }
+      
+      //
+      // Piece movement Nf3 with optional check or checkmate
+      if(matches = pgn.match(/^([KQBNR])([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[2]];
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
+        
+        possible_starting_squares.forEach(function(square){
+          possible_moves = this.board.calculatePossibleMoves(matches[1], square.name, side) 
+          if(possible_moves.indexOf(destination.name) != -1) start = square;
+        });
+        
+        moves.push({start: start, destination: destination});
+        
+        return moves;
+      }
+      // Piece with specific column movement Ngh6 with optional check or checkmate
+      if(matches = pgn.match(/^([KQBNR])([a-h])([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[3]];
+        start_column              = matches[2]
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
+        start                     = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column }); 
+        
+        moves.push({start: start, destination: destination})
+        
+        return moves;
+      }
+      
+      // Piece with specifc square movement Ng3e4 with optional check or checkmate
+      if(matches = pgn.match(/^([KQBNR])([a-h][1-8])([a-h][1-8])(\+)?(\#)?$/)){
+        destination  = this.board[matches[3]];
+        start        = this.board[matches[2]];
+        
+        moves.push({start: start, destination: destination})
+        
+        return moves;
+      }
+      
+      
+      // Piece capture Nxe4 with optional check or checkmate
+      if(matches = pgn.match(/^([KQBNR])x([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[2]];
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
+        possible_starting_squares.forEach(function(square){
+          possible_moves = this.board.calculatePossibleMoves(matches[1], square.name, side) 
+          if(possible_moves.indexOf(destination.name) != -1) start = square;
+        });
+        
+        moves.push({start: start, destination: destination, is_capture: true});
+        
+        return moves;
+      }
+      // Piece with specific column capture Ngxh6 with optional check or checkmate
+      if(matches = pgn.match(/^([KQBNR])([a-h])x([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[3]];
+        start_column              = matches[2]
+        possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
+        start                     = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column }); 
+        
+        moves.push({start: start, destination: destination, is_capture: true})
+        
+        return moves;
+      }
+      
+        // Piece with specific square capture Ng3xe4 with optional check or checkmate
+      if(matches = pgn.match(/^([KQBNR])([a-h][1-8])x([a-h][1-8])(\+)?(\#)?$/)){
+        destination  = this.board[matches[3]];
+        start        = this.board[matches[2]];
+        
+        moves.push({start: start, destination: destination, is_capture: true})
+        
+        return moves;
+      }
       
     },
 
