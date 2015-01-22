@@ -11,6 +11,7 @@
       board = chessBoard();
       board.light_square = 'red';
       board.dark_square  = '#666';
+      board.square_width = '50';
       board.init('board');
       board.draw();
       board.set();
@@ -18,7 +19,7 @@
       reader.init(board);
     </script>
     <br />
-    <textarea id='pgn' style='width: 800px; height: 600px;'></textarea><br />
+    <textarea id='pgn' style='width: 400px; height: 200px;'></textarea><br />
     <button id='submit_pgn' onclick='parsePGN()'>Start Replay</button>
 
     <script>
@@ -26,12 +27,21 @@
         raw    = document.getElementById('pgn').value
         reader.parse(raw);
 
-        white_moves = reader.white_moves;
-        black_moves = reader.black_moves;
+        is_white = true; 
+        
+        reader.moves.forEach(function(move, idx){
+          
+          setInterval(function(){
+            color = is_white ? 'white' : 'black';
+            move  = reader.decodePGN(move, color)[0];
+            board.movePiece(move.start, move.destination, move.is_capture, move.promoting_piece);
+            is_white = !is_white;
+          }, 3000);
 
-        console.log(white_moves.length)
-        console.log(white_moves)
-        console.log(black_moves.length)
+        
+        });
+
+
       }
     </script>
 

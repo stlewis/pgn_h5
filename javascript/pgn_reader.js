@@ -10,6 +10,7 @@ var pgnReader = function(){
     result: null,
     white_moves: Array(),
     black_moves: Array(),
+    moves: Array(),
     board: null,
 
 
@@ -37,6 +38,8 @@ var pgnReader = function(){
         black = /^[\d]+\.(\s)?([a-hPKQRBNO\-\+x1-80]{1,7}) ([a-hPKQRBNO\-\+x1-80]{1,7})\b/.exec(line)[3]
         self.white_moves.push(white);
         self.black_moves.push(black);
+        self.moves.push(white);
+        self.moves.push(black);
       });
       
 
