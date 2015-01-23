@@ -4,19 +4,19 @@ var chessBoard = function(){
 
   // Properties for each piece
   
-  white_king:   '\u2654',
-  white_queen:  '\u2655',
-  white_bishop: '\u2657',
-  white_knight: '\u2658',
-  white_rook:   '\u2656',
-  white_pawn:   '\u2659',
+  white_king:   {symbol: '\u2654', color: 'white'},
+  white_queen:  {symbol: '\u2655', color: 'white'},
+  white_bishop: {symbol: '\u2657', color: 'white'},
+  white_knight: {symbol: '\u2658', color: 'white'},
+  white_rook:   {symbol: '\u2656', color: 'white'},
+  white_pawn:   {symbol: '\u2659', color: 'white'},
   
-  black_king:   '\u265A', 
-  black_queen:  '\u265B',
-  black_bishop: '\u265D',
-  black_knight: '\u265E',
-  black_rook:   '\u265C',
-  black_pawn:   '\u265F',
+  black_king:   {symbol: '\u265A', color: 'black'},
+  black_queen:  {symbol: '\u265B', color: 'black'},
+  black_bishop: {symbol: '\u265D', color: 'black'},
+  black_knight: {symbol: '\u265E', color: 'black'},
+  black_rook:   {symbol: '\u265C', color: 'black'},
+  black_pawn:   {symbol: '\u265F', color: 'black'},
 
   // Board properties              
   light_square: '#ffffff',
@@ -171,6 +171,24 @@ var chessBoard = function(){
         
   },
 
+  squareOccupiedBySelf: function(column, rank, color){
+    if(column.length == 2){ // If we're being asked to judge a diagonal
+      c      = column.substring(0, 1);
+      rank   = column.substring(1);
+      column = c
+    }
+    return this[column + rank].piece && this[column + rank].piece.color == color;
+  },
+
+  squareOccupied: function(column, rank){
+    if(column.length == 2){ // If we're being asked to judge a diagonal
+      c      = column.substring(0, 1);
+      rank   = column.substring(1);
+      column = c
+    }      
+    return this[column + rank].piece
+  },
+
   squaresOccupiedBy: function(piece){
     squares = [];
     for(var propName in this){
@@ -200,7 +218,7 @@ var chessBoard = function(){
       case 'P':
         direction = color == 'white' ?  'up' : 'down';
         next_rank = this.nextRank(rank, direction);
-        if(next_rank) moves.push(column + next_rank);
+        if(next_rank && !this.squareOccupied(column, next_rank)) moves.push(column + next_rank);
         if(rank == 2 && color == 'white' || rank == 7 && color == 'black'){
           // If it's the first move for this pawn... 
           if(color == 'white') moves.push(column + (rank + 2));
@@ -212,15 +230,17 @@ var chessBoard = function(){
         next_up   = this.nextRank(rank, 'up');
         next_down = this.nextRank(rank, 'down');
 
-        if(next_up)   moves.push(column + next_up);
-        if(next_down) moves.push(column + next_down);
+        if(next_up && !this.squareOccupiedBySelf(column, next_up, color))   moves.push(column + next_up);
+        if(next_down && !this.squareOccupiedBySelf(column, next_down, color)) moves.push(column + next_down);
+
 
         // Side to side
         next_right   = this.nextColumn(column,  'right');
         next_left    = this.nextColumn(column,  'left');
+        
+        if(next_right && !this.squareOccupiedBySelf(next_right, rank, color)) moves.push(next_right + rank);
+        if(next_left && !this.squareOccupiedBySelf(next_left, rank, color))  moves.push(next_left + rank);
 
-        if(next_right) moves.push(next_right + rank);
-        if(next_left)  moves.push(next_left + rank);
 
         // Diagonals
         // Diagonals are essentially an equal number of steps up or down and left or right...
@@ -230,21 +250,38 @@ var chessBoard = function(){
         diagonal_down_right = this.nextDiagonal(column, rank, 'down', 'right');
         diagonal_down_left  = this.nextDiagonal(column, rank, 'down', 'left');
 
-        if(diagonal_up_right) moves.push(diagonal_up_right);
-        if(diagonal_up_left) moves.push(diagonal_up_left);
-        if(diagonal_down_right) moves.push(diagonal_down_right);
-        if(diagonal_down_left) moves.push(diagonal_down_left);
+        if(diagonal_up_right && !this.squareOccupiedBySelf(diagonal_up_right, null, color)) moves.push(diagonal_up_right);
+        if(diagonal_up_left && !this.squareOccupiedBySelf(diagonal_up_left, null, color)) moves.push(diagonal_up_left);
+        if(diagonal_down_right && !this.squareOccupiedBySelf(diagonal_down_right, null, color)) moves.push(diagonal_down_right);
+        if(diagonal_down_left && !this.squareOccupiedBySelf(diagonal_down_left, null, color)) moves.push(diagonal_down_left);
       break;
       case 'Q':
         // Queen can cover all columns on the rank 
+        self = this;
+        break_switch = false;
         columns.forEach(function(column){
+          if(break_switch) return;
+
+         if(self.squareOccupiedBySelf(column, rank, color) && from_square != column + rank){
+           break_switch = true; 
+           return;
+         } 
          
          if(from_square != column + rank) moves.push(column + rank);
+         if(self.squareOccupied(column, rank) && from_square != column + rank){
+           break_switch = true; 
+           return; 
+         } 
+
         });
 
         // Queen can cover all ranks on the column
         for(i = 1; i <= 8; i++){
+          if(this.squareOccupiedBySelf(column, i, color) && from_square != column + i) break;
           if(from_square != column + i) moves.push(column + i);
+          console.log("Werd");
+          console.log(moves)
+          if(this.squareOccupied(column, i) && from_square != column + i) break;
         }
 
         // Diagonals
@@ -257,7 +294,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'up', 'right')){
           next = this.nextDiagonal(current_column, current_rank, 'up', 'right');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -267,7 +306,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'up', 'left')){
           next = this.nextDiagonal(current_column, current_rank, 'up', 'left');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -277,7 +318,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'down', 'right')){
           next = this.nextDiagonal(current_column, current_rank, 'down', 'right');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -287,7 +330,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'down', 'left')){
           next = this.nextDiagonal(current_column, current_rank, 'down', 'left');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -304,7 +349,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'up', 'right')){
           next = this.nextDiagonal(current_column, current_rank, 'up', 'right');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -314,7 +361,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'up', 'left')){
           next = this.nextDiagonal(current_column, current_rank, 'up', 'left');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -324,7 +373,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'down', 'right')){
           next = this.nextDiagonal(current_column, current_rank, 'down', 'right');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -334,7 +385,9 @@ var chessBoard = function(){
 
         while(this.nextDiagonal(current_column, current_rank, 'down', 'left')){
           next = this.nextDiagonal(current_column, current_rank, 'down', 'left');
+          if(this.squareOccupiedBySelf(next, null, color)) break;
           moves.push(next);
+          if(this.squareOccupied(next, null)) break;
           current_column = next.substring(0,1);
           current_rank   = parseInt(next.substring(1));
         }
@@ -344,13 +397,13 @@ var chessBoard = function(){
           // In other words, if we can move up 2
           if(columns.indexOf(column) + 1 <= 7){
             square = columns[columns.indexOf(column) + 1] + (rank + 2);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
             // If we can then move right 1
           }
 
           if(columns.indexOf(column) - 1 >= 0){
             square = columns[columns.indexOf(column) - 1] + (rank + 2);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
             // If we can then move left 1
           }
         }
@@ -360,13 +413,13 @@ var chessBoard = function(){
           if(columns.indexOf(column) + 1 <= 7){
             // If we can then move right 1 
             square = columns[columns.indexOf(column) + 1] + (rank - 2);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
           }
 
           if(columns.indexOf(column) - 1 >= 0){
             // If we can then move left 1 
             square = columns[columns.indexOf(column) - 1] + (rank - 2);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
           }
 
         }
@@ -376,13 +429,13 @@ var chessBoard = function(){
           if(columns.indexOf(column) + 2 <= 7){
             // If we can then move right 2 
             square = columns[columns.indexOf(column) + 2] + (rank + 1);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
           }
 
           if(columns.indexOf(column) - 2 >= 0){
             // If we can then move left 1 
             square = columns[columns.indexOf(column) - 2] + (rank + 1);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
           }
         }
         
@@ -391,27 +444,41 @@ var chessBoard = function(){
           if(columns.indexOf(column) + 2 <= 7){
             // If we can then move right 2 
             square = columns[columns.indexOf(column) + 2] + (rank - 1);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
           }
 
           if(columns.indexOf(column) - 2 >= 0){
             // If we can then move left 1 
             square = columns[columns.indexOf(column) - 2] + (rank - 1);
-            moves.push(square);
+            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
           }
         }
       break;
       case 'R':
         // Just give them straight stuff
         // Rook can cover all columns on the rank 
+        self         = this;
+        break_switch = false;
         columns.forEach(function(column){
-         
+          if(break_switch) return;
+
+         if(self.squareOccupiedBySelf(column, rank, color) && from_square != column + rank){
+           break_switch = true;
+           return;
+         } 
          if(from_square != column + rank) moves.push(column + rank);
+         if(self.squareOccupied(column, rank) && from_square != column + rank){
+           break_switch = true; 
+           return
+         } 
+
         });
 
         // Rook can cover all ranks on the column
         for(i = 1; i <= 8; i++){
+          if(this.squareOccupiedBySelf(column, i, color) && from_square != column + i) break;
           if(from_square != column + i) moves.push(column + i);
+          if(this.squareOccupied(column, i) && from_square != column + i) break;
         }
       break;
     
@@ -474,10 +541,13 @@ var chessBoard = function(){
    
     this.ctx.font =  this.piece_size()+"px Arial";
     this.ctx.fillStyle = '#000'
-    this.ctx.fillText(piece, x, y);
+    this.ctx.fillText(piece.symbol, x, y);
   },
 
   movePiece: function(from, to, is_capture, promote_to){
+    console.log(from)
+      console.log(to)
+
     piece = promote_to ? promote_to : from.piece;
 
     if(is_capture) this.removePiece(to);

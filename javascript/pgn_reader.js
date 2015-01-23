@@ -99,8 +99,8 @@ var pgnReader = function(){
       }
       
       // Pawn advancement with capture and optional check or checkmate exf4
-      if(matches = pgn.match(/^[a-h][1-8]x([a-h][1-8])(\+)?(\#)?$/)){
-        destination               = this.board[matches[1]];
+      if(matches = pgn.match(/^[a-h]([1-8])?x([a-h][1-8])(\+)?(\#)?$/)){
+        destination               = this.board[matches[2]];
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
         
         possible_starting_squares.forEach(function(square){
@@ -108,7 +108,7 @@ var pgnReader = function(){
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
         
-        moves.push({start: start, destination: destination});
+        moves.push({start: start, destination: destination, is_capture: true});
         
         return moves;
       }
@@ -165,7 +165,7 @@ var pgnReader = function(){
         destination               = this.board[matches[3]];
         start_column              = matches[2]
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
-        start                     = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column }); 
+        start                     = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column })[0]; 
         
         moves.push({start: start, destination: destination})
         
@@ -201,7 +201,7 @@ var pgnReader = function(){
         destination               = this.board[matches[3]];
         start_column              = matches[2]
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
-        start                     = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column }); 
+        start                     = possible_starting_squares.filter(function(square){ return square.name.substring(0,1) == start_column })[0]; 
         
         moves.push({start: start, destination: destination, is_capture: true})
         
