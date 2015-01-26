@@ -34,10 +34,10 @@ var pgnReader = function(){
       moves = content.replace(/\[.*\]/g, '');
       moves = moves.trim();
 
-      lines = moves.match(/\d+\.(\s)?([\w\-\+]+)\s([\w\-\+]+)(\n)?/g)
+      lines = moves.match(/\d+\.(\s)?([\w\-\+]+)\s?([\w\-\+]+)?(\n)?/g)
       
       lines.forEach(function(line){
-        match = /\d+\.(\s)?([\w\-\+]+)\s([\w\-\+]+)(\n)?/.exec(line);
+        match = /\d+\.(\s)?([\w\-\+]+)\s?([\w\-\+]+)?(\n)?/.exec(line);
         console.log(match);
         white = match[2];
         black = match[3];
