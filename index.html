@@ -63,7 +63,7 @@ Rd3 40. Qa8 c3 41. Qa4+ Ke1 42. f4 f5 43. Kc1 Rd2 44. Qa7 1-0
       board                = chessBoard().init('board');
       board.light_square   = 'tan';
       board.dark_square    = 'olive';
-      board.square_width   = '40';
+      board.square_width   = '100';
       board.draw();
       board.set();
 
@@ -82,6 +82,7 @@ Rd3 40. Qa8 c3 41. Qa4+ Ke1 42. f4 f5 43. Kc1 Rd2 44. Qa7 1-0
       function advancePGN(){
         movetext = reader.moves.shift();
         if(movetext){
+          console.log(movetext + ' ' + turn);
           moves = reader.decodePGN(movetext, turn);
           moves.forEach(function(move){
             board.movePiece(move.start, move.destination, move.is_capture, move.promote_to);
