@@ -1,23 +1,6 @@
 var chessBoard = function(){
   
   return {
-
-  // Properties for each piece
-  
-  white_king:   {symbol: '\u2654', color: 'white'},
-  white_queen:  {symbol: '\u2655', color: 'white'},
-  white_bishop: {symbol: '\u2657', color: 'white'},
-  white_knight: {symbol: '\u2658', color: 'white'},
-  white_rook:   {symbol: '\u2656', color: 'white'},
-  white_pawn:   {symbol: '\u2659', color: 'white'},
-  
-  black_king:   {symbol: '\u265A', color: 'black'},
-  black_queen:  {symbol: '\u265B', color: 'black'},
-  black_bishop: {symbol: '\u265D', color: 'black'},
-  black_knight: {symbol: '\u265E', color: 'black'},
-  black_rook:   {symbol: '\u265C', color: 'black'},
-  black_pawn:   {symbol: '\u265F', color: 'black'},
-
   // Board properties              
   light_square: '#ffffff',
   dark_square:  '#d3d3d3',
@@ -26,6 +9,20 @@ var chessBoard = function(){
   square_width: 100,
   board_width: function(){ return (this.square_width * 8) + 40; },
   piece_size: function(){ return this.square_width * .75; },
+
+  white_king:   Piece().init('K', 'white'),
+  white_queen:  Piece().init('Q', 'white'),
+  white_bishop: Piece().init('B', 'white'),
+  white_knight: Piece().init('N', 'white'),
+  white_rook:   Piece().init('R', 'white'),
+  white_pawn:   Piece().init('P', 'white'),
+
+  black_king:   Piece().init('K', 'black'),
+  black_queen:  Piece().init('Q', 'black'),
+  black_bishop: Piece().init('B', 'black'),
+  black_knight: Piece().init('N', 'black'),
+  black_rook:   Piece().init('R', 'black'),
+  black_pawn:   Piece().init('P', 'black'),
  
   // Define property objects for every board square. coord is the x,y position that a piece should be placed 
   // at for that square. name is the name of the square and piece is the charcode for the piece
@@ -104,6 +101,7 @@ var chessBoard = function(){
   init: function(target_id){
     this.c   = document.getElementById(target_id);
     this.ctx = this.c.getContext('2d');
+    return this;
   },
   
   draw: function(){
@@ -171,353 +169,6 @@ var chessBoard = function(){
         
   },
 
-  squareOccupiedBySelf: function(column, rank, color){
-    if(column.length == 2){ // If we're being asked to judge a diagonal
-      c      = column.substring(0, 1);
-      rank   = column.substring(1);
-      column = c
-    }
-    return this[column + rank].piece && this[column + rank].piece.color == color;
-  },
-
-  squareOccupied: function(column, rank){
-    if(column.length == 2){ // If we're being asked to judge a diagonal
-      c      = column.substring(0, 1);
-      rank   = column.substring(1);
-      column = c
-    }      
-    return this[column + rank].piece
-  },
-
-  squaresOccupiedBy: function(piece){
-    squares = [];
-    for(var propName in this){
-      if(this[propName].hasOwnProperty('piece')) squares.push(this[propName]);
-    }
-    return squares.filter(function(square){ return square.piece == piece });
-  },
-
-  calculatePawnCaptures: function(from_square, color){
-    squares          = [];
-    column           = from_square.substring(0, 1);
-    rank             = parseInt(from_square.substring(1));
-    rank_direction   = color == 'white' ? 'up' : 'down';
-    squares.push(this.nextDiagonal(column, rank, rank_direction, 'left'));
-    squares.push(this.nextDiagonal(column, rank, rank_direction, 'right'));
-    return squares;
-  },
-
-  calculatePossibleMoves: function(piece_type, from_square, color){
-    color       = color ? color : 'white';
-    var columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    column      = from_square.substring(0, 1);
-    rank        = parseInt(from_square.substring(1));
-    moves       = Array();
-    
-    switch(piece_type){
-      case 'P':
-        direction = color == 'white' ?  'up' : 'down';
-        next_rank = this.nextRank(rank, direction);
-        if(next_rank && !this.squareOccupied(column, next_rank)) moves.push(column + next_rank);
-        if(rank == 2 && color == 'white' || rank == 7 && color == 'black'){
-          // If it's the first move for this pawn... 
-          if(color == 'white') moves.push(column + (rank + 2));
-          if(color == 'black') moves.push(column + (rank - 2));
-        }
-      break;
-      case 'K':
-        // Up and down
-        next_up   = this.nextRank(rank, 'up');
-        next_down = this.nextRank(rank, 'down');
-
-        if(next_up && !this.squareOccupiedBySelf(column, next_up, color))   moves.push(column + next_up);
-        if(next_down && !this.squareOccupiedBySelf(column, next_down, color)) moves.push(column + next_down);
-
-
-        // Side to side
-        next_right   = this.nextColumn(column,  'right');
-        next_left    = this.nextColumn(column,  'left');
-        
-        if(next_right && !this.squareOccupiedBySelf(next_right, rank, color)) moves.push(next_right + rank);
-        if(next_left && !this.squareOccupiedBySelf(next_left, rank, color))  moves.push(next_left + rank);
-
-
-        // Diagonals
-        // Diagonals are essentially an equal number of steps up or down and left or right...
-        diagonal_up_right   = this.nextDiagonal(column, rank, 'up', 'right');
-        diagonal_up_left    = this.nextDiagonal(column, rank, 'up', 'left');
-
-        diagonal_down_right = this.nextDiagonal(column, rank, 'down', 'right');
-        diagonal_down_left  = this.nextDiagonal(column, rank, 'down', 'left');
-
-        if(diagonal_up_right && !this.squareOccupiedBySelf(diagonal_up_right, null, color)) moves.push(diagonal_up_right);
-        if(diagonal_up_left && !this.squareOccupiedBySelf(diagonal_up_left, null, color)) moves.push(diagonal_up_left);
-        if(diagonal_down_right && !this.squareOccupiedBySelf(diagonal_down_right, null, color)) moves.push(diagonal_down_right);
-        if(diagonal_down_left && !this.squareOccupiedBySelf(diagonal_down_left, null, color)) moves.push(diagonal_down_left);
-      break;
-      case 'Q':
-        // Queen can cover all columns on the rank 
-        self = this;
-        break_switch = false;
-        columns.forEach(function(column){
-          if(break_switch) return;
-
-         if(self.squareOccupiedBySelf(column, rank, color) && from_square != column + rank){
-           break_switch = true; 
-           return;
-         } 
-         
-         if(from_square != column + rank) moves.push(column + rank);
-         if(self.squareOccupied(column, rank) && from_square != column + rank){
-           break_switch = true; 
-           return; 
-         } 
-
-        });
-
-        // Queen can cover all ranks on the column
-        for(i = 1; i <= 8; i++){
-          if(this.squareOccupiedBySelf(column, i, color) && from_square != column + i) break;
-          if(from_square != column + i) moves.push(column + i);
-          console.log("Werd");
-          console.log(moves)
-          if(this.squareOccupied(column, i) && from_square != column + i) break;
-        }
-
-        // Diagonals
-        original_column = column;
-        original_rank   = rank;
-
-        // First, figure out how far up and right diagonally
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'up', 'right')){
-          next = this.nextDiagonal(current_column, current_rank, 'up', 'right');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'up', 'left')){
-          next = this.nextDiagonal(current_column, current_rank, 'up', 'left');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-        
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'down', 'right')){
-          next = this.nextDiagonal(current_column, current_rank, 'down', 'right');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'down', 'left')){
-          next = this.nextDiagonal(current_column, current_rank, 'down', 'left');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-      break;
-      case 'B':
-        // Just give them diagonals
-        // Diagonals
-        original_column = column;
-        original_rank   = rank;
-
-        // First, figure out how far up and right diagonally
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'up', 'right')){
-          next = this.nextDiagonal(current_column, current_rank, 'up', 'right');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'up', 'left')){
-          next = this.nextDiagonal(current_column, current_rank, 'up', 'left');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-        
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'down', 'right')){
-          next = this.nextDiagonal(current_column, current_rank, 'down', 'right');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-
-        current_column  = original_column;
-        current_rank    = original_rank;
-
-        while(this.nextDiagonal(current_column, current_rank, 'down', 'left')){
-          next = this.nextDiagonal(current_column, current_rank, 'down', 'left');
-          if(this.squareOccupiedBySelf(next, null, color)) break;
-          moves.push(next);
-          if(this.squareOccupied(next, null)) break;
-          current_column = next.substring(0,1);
-          current_rank   = parseInt(next.substring(1));
-        }
-      break;
-      case 'N':
-        if(rank + 2 <= 8){
-          // In other words, if we can move up 2
-          if(columns.indexOf(column) + 1 <= 7){
-            square = columns[columns.indexOf(column) + 1] + (rank + 2);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-            // If we can then move right 1
-          }
-
-          if(columns.indexOf(column) - 1 >= 0){
-            square = columns[columns.indexOf(column) - 1] + (rank + 2);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-            // If we can then move left 1
-          }
-        }
-
-        if(rank - 2 >= 1){
-          // In other words, if we can move down 2 
-          if(columns.indexOf(column) + 1 <= 7){
-            // If we can then move right 1 
-            square = columns[columns.indexOf(column) + 1] + (rank - 2);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-          }
-
-          if(columns.indexOf(column) - 1 >= 0){
-            // If we can then move left 1 
-            square = columns[columns.indexOf(column) - 1] + (rank - 2);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-          }
-
-        }
-
-        if(rank + 1 <= 8){
-          // In other words, if we can move up 1 
-          if(columns.indexOf(column) + 2 <= 7){
-            // If we can then move right 2 
-            square = columns[columns.indexOf(column) + 2] + (rank + 1);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-          }
-
-          if(columns.indexOf(column) - 2 >= 0){
-            // If we can then move left 1 
-            square = columns[columns.indexOf(column) - 2] + (rank + 1);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-          }
-        }
-        
-        if(rank - 1 >= 1){
-          // In other words, if we can move down 1 
-          if(columns.indexOf(column) + 2 <= 7){
-            // If we can then move right 2 
-            square = columns[columns.indexOf(column) + 2] + (rank - 1);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-          }
-
-          if(columns.indexOf(column) - 2 >= 0){
-            // If we can then move left 1 
-            square = columns[columns.indexOf(column) - 2] + (rank - 1);
-            if(!this.squareOccupiedBySelf(square, null)) moves.push(square);
-          }
-        }
-      break;
-      case 'R':
-        // Just give them straight stuff
-        // Rook can cover all columns on the rank 
-        self         = this;
-        break_switch = false;
-        columns.forEach(function(column){
-          if(break_switch) return;
-
-         if(self.squareOccupiedBySelf(column, rank, color) && from_square != column + rank){
-           break_switch = true;
-           return;
-         } 
-         if(from_square != column + rank) moves.push(column + rank);
-         if(self.squareOccupied(column, rank) && from_square != column + rank){
-           break_switch = true; 
-           return
-         } 
-
-        });
-
-        // Rook can cover all ranks on the column
-        for(i = 1; i <= 8; i++){
-          if(this.squareOccupiedBySelf(column, i, color) && from_square != column + i) break;
-          if(from_square != column + i) moves.push(column + i);
-          if(this.squareOccupied(column, i) && from_square != column + i) break;
-        }
-      break;
-    
-    
-    }
-    return moves;
-  },
-
-  nextColumn: function(column, direction){
-
-    var columns   = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    var next      = null; 
-    if(direction == 'right'){
-      next = columns[columns.indexOf(column) + 1];
-    }else{
-      next = columns[columns.indexOf(column) - 1];
-    }
-    return next ? next : null;
-  },
-
-  nextRank: function(rank, direction){
-    var next = null;
-    if(direction == 'up'){
-      next = rank < 8 ? rank + 1 : null; 
-    }else{
-      next = rank > 1 ? rank - 1 : null; 
-    }
-    return next ? next : null;
-  },
-
-  nextDiagonal: function(column, rank, rank_direction, column_direction){
-    next_diagonal = null;
-    next_rank     = this.nextRank(rank, rank_direction);
-    next_column   = this.nextColumn(column, column_direction);
-    if(next_rank && next_column) next_diagonal = next_column + next_rank;
-    
-    return next_diagonal;
-  },
-
   calculateCoordinate: function(square_name){
     // Figure out ideal piece placement based upon square dimensions
     column = square_name.substring(0,1);
@@ -531,6 +182,14 @@ var chessBoard = function(){
 
     return [x, y];
   },
+ 
+  squaresOccupiedBy: function(piece){
+    squares = [];
+    for(var propName in this){
+      if(this[propName].hasOwnProperty('piece')) squares.push(this[propName]);
+    }
+    return squares.filter(function(square){ return square.piece == piece });
+  },
   
   placePiece: function(piece, square){
     square.piece = piece;
@@ -542,12 +201,10 @@ var chessBoard = function(){
     this.ctx.font =  this.piece_size()+"px Arial";
     this.ctx.fillStyle = '#000'
     this.ctx.fillText(piece.symbol, x, y);
+    return piece;
   },
 
   movePiece: function(from, to, is_capture, promote_to){
-    console.log(from)
-      console.log(to)
-
     piece = promote_to ? promote_to : from.piece;
 
     if(is_capture) this.removePiece(to);
@@ -557,13 +214,13 @@ var chessBoard = function(){
   
   removePiece: function(square){
     square.piece = null;
-    column = square.name.substring(0, 1);
-    rank   = parseInt(square.name.substring(1));
+    var column = square.name.substring(0, 1);
+    var rank   = parseInt(square.name.substring(1));
 
-    odd_blacks  = Array('a', 'c', 'e', 'g');
-    even_blacks = Array('b', 'd', 'f', 'h');
+    var odd_blacks  = Array('a', 'c', 'e', 'g');
+    var even_blacks = Array('b', 'd', 'f', 'h');
                         // If we're on an odd numbered rank and the column is in the odd_blacks list or if we're on an even numbered rank and the column is in the even_blacks list
-    is_black_square = (odd_blacks.indexOf(column) >= 0 && rank % 2 == 1) || (even_blacks.indexOf(column) >= 0 && rank % 2 == 0);
+    var is_black_square = (odd_blacks.indexOf(column) >= 0 && rank % 2 == 1) || (even_blacks.indexOf(column) >= 0 && rank % 2 == 0);
     
     if(is_black_square){
       this.ctx.fillStyle = this.dark_square;
@@ -574,6 +231,7 @@ var chessBoard = function(){
     coords = this.calculateCoordinate(square.name)
     x      = coords[0] - this.square_width/6.7;
     y      = coords[1] - this.square_width/1.43;
+
     this.ctx.fillRect(x, y, this.square_width, this.square_width);
   },
 
@@ -609,9 +267,219 @@ var chessBoard = function(){
       this.placePiece(this.white_pawn, this[white_square]) 
       this.placePiece(this.black_pawn, this[black_square]) 
     }
-    
+  },
 
-  }
+  listLegalMoves: function(start_square){
+    var self = this;
+    var moving_piece   = start_square.piece;
+    var possible_moves = moving_piece.possibleMoves(start_square.name);
+    var legal_moves    = [];
+
+    possible_moves.forEach(function(destination){
+      var destination_square = self[destination]; 
+      if(self._isLegalMove(start_square, destination_square)) legal_moves.push(destination_square.name);
+    });
+    return legal_moves;
+
+    
+  },
+
+  _isLegalMove: function(start_square, destination_square){
+    var moving_piece = start_square.piece; 
+    // Return false if the start square has no piece
+    if(!moving_piece) return false;
+    // Return false if the piece in the start square is intrinsically incapable of the move
+    if(moving_piece.possibleMoves(start_square.name).indexOf(destination_square.name) == -1) return false;
+    
+    // Return false if the piece in the destination square belongs to the same side as the moving piece
+    if(destination_square.piece && destination_square.piece.color == moving_piece.color) return false;
+
+    // Return false for invalid pawn moves
+    //
+    if(moving_piece.name == 'P'){
+      var start_square_column = start_square.name.substring(0,1);
+      var start_square_rank   = start_square.name.substring(1);
+      var direction           = moving_piece.color == 'white' ? 'up' : 'down';
+
+      // If the move is straight ahead and there is a piece of any color, return false
+      square_ahead_name = (start_square_column + this._nextRank(start_square_rank, direction));
+
+      if(destination_square.name == square_ahead_name && destination_square.piece) return false;
+
+      next_left_diagonal   = this._nextDiagonal(start_square_column, start_square_rank, 'left', direction)
+      next_right_diagonal  = this._nextDiagonal(start_square_column, start_square_rank, 'right', direction);
+      capture_left_square  = next_left_diagonal ? this[next_left_diagonal] : null;
+      capture_right_square = next_right_diagonal ? this[next_right_diagonal] : null;
+       
+      if(destination_square == capture_left_square && !capture_left_square.piece) return false;
+      if(destination_square == capture_right_square && !capture_right_square.piece) return false;
+     
+    } 
+
+    // Return false if any other piece is blocking the moving piece's path to their destination square.
+    // Given that they can't be blocked, we can pre-emptively return true here if the moving piece is a 
+    // knight.
+    if(moving_piece.name == 'N') return true;
+
+    var start_square_column = start_square.name.substring(0,1);
+    var start_square_rank   = start_square.name.substring(1);
+
+    var destination_square_column = destination_square.name.substring(0,1);
+    var destination_square_rank   = destination_square.name.substring(1);
+
+    // First, figure out if we need to check the horizontal, vertical, or diagonal path
+    var on_horizontal = start_square_rank == destination_square_rank
+    var on_vertical   = start_square_column == destination_square_column
+    var on_diagonal   = !on_horizontal && !on_vertical;
+
+    if(on_horizontal){
+      var start_column_index  = this._columnIndex(start_square_column);
+      var target_column_index = this._columnIndex(destination_square_column);
+      // Have to figure out if the target square is to the right or left 
+      var target_to_right = target_column_index > start_column_index;
+
+      // If _anything_ lies between the destination and the target, the piece isn't allowed there.
+      if(target_to_right){
+        // Iterate through the squares between the start and the target. If anything is found, return false;
+        for(i = start_column_index + 1; i < target_column_index; i++){
+          var square_name = this._columnAtIndex(i) + start_square_rank;
+          if(this[square_name].piece) return false;
+        }
+      }else{
+        // Iterate through the squares between the start and the target. If anything is found, return false;
+        for(i = start_column_index - 1; i > target_column_index; i--){
+          var square_name = this._columnAtIndex(i) + start_square_rank;
+          if(this[square_name].piece) return false;
+        }
+      }
+    }
+
+    if(on_vertical){
+      // Figure out if the target is above or below. 
+      // The first part of this condition should return false if you're a black pawn, regardless of the outcome of the second part.
+      var target_above = (moving_piece.color == 'white' || moving_piece.name != 'P') && destination_square_rank > start_square_rank
+
+      if(target_above){
+        for(i = parseInt(start_square_rank) + 1; i < destination_square_rank; i++){
+          var square_name = start_square_column + i;
+          if(this[square_name].piece) return false;
+        }
+      }else{
+        for(i = start_square_rank - 1; i > destination_square_rank; i--){
+          var square_name = start_square_column + i;
+          if(this[square_name].piece) return false;
+        }
+      }
+    
+    }
+
+    if(on_diagonal){
+      var start_column_index  = this._columnIndex(start_square_column);
+      var target_column_index = this._columnIndex(destination_square_column);
+      // Figure out if the target is above or below
+      var target_above    = (moving_piece.color == 'white' || moving_piece.name != 'P') && destination_square_rank > start_square_rank
+     // Figure out if the target is to the right or left
+      var target_to_right = target_column_index > start_column_index;
+
+      // Target above and right
+      if(target_above && target_to_right){
+        var target_square = destination_square.name;
+
+        // Easiest thing is to grab the next diagonal until we reach the destination square, checking each square for a piece 
+        var nextDiagonal = this._nextDiagonal(start_square_column, start_square_rank, 'right', 'up');
+        while(nextDiagonal != target_square){
+          if(this[nextDiagonal].piece) return false;
+          var column   = nextDiagonal.substring(0, 1);
+          var rank     = parseInt(nextDiagonal.substring(1));
+          nextDiagonal = this._nextDiagonal(column, rank, 'right', 'up');
+        }
+
+      }
+      // Target above and left
+      if(target_above && !target_to_right){
+        var target_square = destination_square.name;
+
+        // Easiest thing is to grab the next diagonal until we reach the destination square, checking each square for a piece 
+        var nextDiagonal = this._nextDiagonal(start_square_column, start_square_rank, 'left', 'up');
+        while(nextDiagonal != target_square){
+          if(this[nextDiagonal].piece) return false;
+          var column   = nextDiagonal.substring(0, 1);
+          var rank     = parseInt(nextDiagonal.substring(1));
+          nextDiagonal = this._nextDiagonal(column, rank, 'left', 'up');
+        }
+
+      }
+      // Target below and right
+      if(!target_above && target_to_right){
+        var target_square = destination_square.name;
+
+        // Easiest thing is to grab the next diagonal until we reach the destination square, checking each square for a piece 
+        var nextDiagonal = this._nextDiagonal(start_square_column, start_square_rank, 'right', 'down');
+        while(nextDiagonal != target_square){
+          if(this[nextDiagonal].piece) return false;
+          var column   = nextDiagonal.substring(0, 1);
+          var rank     = parseInt(nextDiagonal.substring(1));
+          nextDiagonal = this._nextDiagonal(column, rank, 'right', 'down');
+        }
+
+      }
+      // Target below and left
+      if(!target_above && !target_to_right){
+        var target_square = destination_square.name;
+
+        // Easiest thing is to grab the next diagonal until we reach the destination square, checking each square for a piece 
+        var nextDiagonal = this._nextDiagonal(start_square_column, start_square_rank, 'left', 'down');
+        while(nextDiagonal != target_square){
+          if(this[nextDiagonal].piece) return false;
+          var column   = nextDiagonal.substring(0, 1);
+          var rank     = parseInt(nextDiagonal.substring(1));
+          nextDiagonal = this._nextDiagonal(column, rank, 'left', 'down');
+        }
+
+      }
+    }
+    return true;
+  },
+
+
+    // FIXME Kind of sucks that these methods are duplicated on Piece.  Maybe do a mixin of some kind?
+  _columnIndex: function(column_letter){
+    var columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    return columns.indexOf(column_letter);
+  },
+
+  _columnAtIndex: function(index){
+    var columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    return columns[index];
+  },
+  
+  _nextColumn: function(starting_column, direction){
+    var current_column_index = this._columnIndex(starting_column);
+
+    if(direction == 'left') return this._columnAtIndex(current_column_index - 1);
+    if(direction == 'right') return this._columnAtIndex(current_column_index + 1);
+    return null;
+  },
+
+  _nextRank: function(starting_rank, direction){
+    var next = null;
+    if(direction == 'up')   next = parseInt(starting_rank) + 1;
+    if(direction == 'down') next = parseInt(starting_rank) - 1;
+
+    if(next < 1 || next > 8) return null;
+    return next;
+  },
+
+  _nextDiagonal: function(starting_column, starting_rank, x_direction, y_direction){
+    // The next diagonal in any given x,y direction is calcuable by obtaining the next
+    // column in the x direction with the next rank in the y direction.
+    var next_column = this._nextColumn(starting_column, x_direction);
+    var next_rank   = this._nextRank(starting_rank, y_direction);
+    if(next_column && next_rank){
+      return next_column + next_rank;
+    }
+    return null;
+  },
 
 
   }

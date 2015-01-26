@@ -16,7 +16,7 @@ var pgnReader = function(){
 
     init: function(board){
       this.board = board;
-    
+      return this;    
     },
     
     parse: function(content){
@@ -89,10 +89,10 @@ var pgnReader = function(){
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
         
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves('P', square.name, side) 
+          possible_moves = this.board.listLegalMoves(square);
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
-        
+              
         moves.push({start: start, destination: destination});
        
         return moves;
@@ -104,7 +104,7 @@ var pgnReader = function(){
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
         
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePawnCaptures(square.name, side) 
+          possible_moves = this.board.listLegalMoves(square);
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
         
@@ -120,7 +120,7 @@ var pgnReader = function(){
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
         
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves('P', square.name, side) 
+          possible_moves = this.board.listLegalMoves(square)
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
         
@@ -136,7 +136,7 @@ var pgnReader = function(){
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, 'P'));
         
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePawnCaptures(square.name, side) 
+          this.board.listLegalMoves(square);
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
         
@@ -152,7 +152,7 @@ var pgnReader = function(){
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
         
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves(matches[1], square.name, side) 
+          possible_moves = this.board.listLegalMoves(square);
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
         
@@ -188,7 +188,7 @@ var pgnReader = function(){
         destination               = this.board[matches[2]];
         possible_starting_squares = this.board.squaresOccupiedBy(this.pieceByCode(side, matches[1]));
         possible_starting_squares.forEach(function(square){
-          possible_moves = this.board.calculatePossibleMoves(matches[1], square.name, side) 
+          possible_moves = this.board.listLegalMoves(square);
           if(possible_moves.indexOf(destination.name) != -1) start = square;
         });
         
