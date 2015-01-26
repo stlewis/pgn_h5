@@ -31,11 +31,16 @@ var pgnReader = function(){
       this.black = /\[Black (.*)\]/.exec(content)[1]
       this.result = /\[Result (.*)\]/.exec(content)[1]
 
-      lines = content.match(/[\d]+\.(\s)?([a-hPKQRBNO\-\+x1-80]{1,7}) ([a-hPKQRBNO\-\+x1-80]{1,7})\b/g);
+      moves = content.replace(/\[.*\]/g, '');
+      moves = moves.trim();
+
+      lines = moves.match(/\d+\.(\s)?([\w\-\+]+)\s([\w\-\+]+)(\n)?/g)
       
       lines.forEach(function(line){
-        white = /^[\d]+\.(\s)?([a-hPKQRBNO\-\+x1-8\0]{1,7})/.exec(line)[2];
-        black = /^[\d]+\.(\s)?([a-hPKQRBNO\-\+x1-80]{1,7}) ([a-hPKQRBNO\-\+x1-80]{1,7})\b/.exec(line)[3]
+        match = /\d+\.(\s)?([\w\-\+]+)\s([\w\-\+]+)(\n)?/.exec(line);
+        console.log(match);
+        white = match[2];
+        black = match[3];
         self.white_moves.push(white);
         self.black_moves.push(black);
         self.moves.push(white);
@@ -57,6 +62,12 @@ var pgnReader = function(){
       var start       = null;
       var destination = null;
       var moves       = [];
+
+      // White Win
+      if(pgn == '1-0') return true;
+
+      // Black Win
+      if(pgn == '0-1') return true;
 
       // Castling
       if(pgn == 'O-O'){

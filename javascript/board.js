@@ -98,10 +98,35 @@ var chessBoard = function(){
   h7: {name: 'h7', piece: null},
   h8: {name: 'h8', piece: null},
 
+  last_start_square: {},
+  last_destination_square: {},
+
   init: function(target_id){
     this.c   = document.getElementById(target_id);
     this.ctx = this.c.getContext('2d');
     return this;
+  },
+
+  _strokeSquare: function(square, color){
+    coords = this.calculateCoordinate(square.name)
+    x      = coords[0] - this.square_width/6.7;
+    y      = coords[1] - this.square_width/1.43;
+    this.ctx.rect(x * this.square_width, y * this.square_width, this.square_width, this.square_width);
+    this.ctx.strokeStyle = color;
+    this.ctx.strokeRect(x, y, this.square_width, this.square_width);
+  },
+
+  _strokeStartSquare: function(square){
+    this._strokeSquare(square, 'red');
+  },
+
+  _clearLastMoveStrokes: function(){
+    if(this.last_start_square.name) this._strokeSquare(this.last_start_square, 'black');
+    if(this.last_destination_square.name) this._strokeSquare(this.last_destination_square, 'black');
+  },
+
+  strokeDestinationSquare: function(square){
+    this._strokeSquare(square, 'blue');
   },
   
   draw: function(){
@@ -116,11 +141,17 @@ var chessBoard = function(){
         for(i = 0; i < 8; i++){
           this.ctx.fillStyle = (i % 2 == 0) ? this.light_square : this.dark_square;
           this.ctx.fillRect(x * this.square_width, i * this.square_width, this.square_width, this.square_width);
+          this.ctx.rect(x * this.square_width, i * this.square_width, this.square_width, this.square_width);
+          this.ctx.strokeStyle = 'black';
+          this.ctx.stroke();
         }
       }else{
         for(i = 0; i < 8; i++){
           this.ctx.fillStyle = (i % 2 == 1) ? this.light_square : this.dark_square;
           this.ctx.fillRect(x * this.square_width, i * this.square_width, this.square_width, this.square_width);
+          this.ctx.rect(x * this.square_width, i * this.square_width, this.square_width, this.square_width);
+          this.ctx.strokeStyle = 'black';
+          this.ctx.stroke();
         }
       }
     
@@ -191,7 +222,10 @@ var chessBoard = function(){
     return squares.filter(function(square){ return square.piece == piece });
   },
   
-  placePiece: function(piece, square){
+  placePiece: function(piece, square, with_stroke){
+
+    if(!with_stroke) with_stroke = false;
+
     square.piece = piece;
     if(!this.ctx) return true;
     coord = this.calculateCoordinate(square.name);
@@ -201,18 +235,23 @@ var chessBoard = function(){
     this.ctx.font =  this.piece_size()+"px Arial";
     this.ctx.fillStyle = '#000'
     this.ctx.fillText(piece.symbol, x, y);
+    if(with_stroke){
+      this.last_destination_square = square;
+      this.strokeDestinationSquare(square); 
+    } 
     return piece;
   },
 
   movePiece: function(from, to, is_capture, promote_to){
+    this._clearLastMoveStrokes();
     piece = promote_to ? promote_to : from.piece;
-
     if(is_capture) this.removePiece(to);
-    this.removePiece(from);
-    this.placePiece(piece, to);
+    this.removePiece(from, true);
+    this.placePiece(piece, to, true);
   },
   
-  removePiece: function(square){
+  removePiece: function(square, with_stroke){
+    if(!with_stroke) with_stroke = false
     square.piece = null;
     var column = square.name.substring(0, 1);
     var rank   = parseInt(square.name.substring(1));
@@ -233,6 +272,10 @@ var chessBoard = function(){
     y      = coords[1] - this.square_width/1.43;
 
     this.ctx.fillRect(x, y, this.square_width, this.square_width);
+    if(with_stroke){
+      this.last_start_square = square;
+      this._strokeStartSquare(square);
+    }
   },
 
   set: function(){ // Set the initial piece placement for a game
