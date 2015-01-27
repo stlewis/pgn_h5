@@ -8,9 +8,10 @@ var pgnReader = function(){
     white: 'White Player',
     black: 'Black Player',
     result: null,
-    white_moves: Array(),
-    black_moves: Array(),
-    moves: Array(),
+    white_moves: [],
+    black_moves: [],
+    moves: [],
+    plys: [],
     board: null,
 
 
@@ -31,20 +32,44 @@ var pgnReader = function(){
       this.black = /\[Black (.*)\]/.exec(content)[1]
       this.result = /\[Result (.*)\]/.exec(content)[1]
 
-      moves = content.replace(/\[.*\]/g, '');
-      moves = moves.trim();
+       movelist = content.replace(/\[.*\]/g, '');
+       movelist = movelist.trim();
 
-      lines = moves.match(/\d+\.(\s)?([\w\-\+]+)\s?([\w\-\+]+)?(\n)?/g)
+      // FIXME Almost there!  Need to be able to parse continuation lines...that is, when a line represents a black move only
+      // This might be a good time to convert a 'move' to a psuedo-object containing meta information, such as move #, turn, etc.
+
+      lines = movelist.match(/\d+\.(\s)?(\.\.|([\w\-\+]+))\s?([\w\-\+]+)?(\s)?(\{[^\{\}]\})?\n?/g);
+      self  = this;
       
       lines.forEach(function(line){
-        match = /\d+\.(\s)?([\w\-\+]+)\s?([\w\-\+]+)?(\n)?/.exec(line);
-        console.log(match);
-        white = match[2];
-        black = match[3];
-        self.white_moves.push(white);
-        self.black_moves.push(black);
-        self.moves.push(white);
-        self.moves.push(black);
+        var match_for_white;
+        var match_for_black;
+        
+        var move_info   = {};
+        continuation    = line.match(/^\d+\.\.\./);
+
+        if(continuation){
+          match_for_black = line.match(/^\d+\.\.\.([\w\-\+]+)/)[1];
+        }else{
+          match_for_white = line.match(/^\d+\.\s?([\w\-\+]+)/)[1];
+          match_for_black = line.match(/^\d+\.\s?([\w\-\+]+)\s([\w\-\+]+)?(\n)?/)[2]
+        }
+        
+        if(match_for_white){
+          move_info['white'] = match_for_white;
+          self.plys.push(match_for_white);
+        } 
+        if(match_for_black){
+          move_info['black'] = match_for_black; 
+          self.plys.push(match_for_black);
+        } 
+
+        move_info['number'] = line.match(/^(\d+)\./)[1];
+
+        move_info['comment'] = line.match(/\{.*\}/);
+        move_info['raw']     = line;
+
+        self.moves.push(move_info);
       });
       
 
@@ -62,6 +87,9 @@ var pgnReader = function(){
       var start       = null;
       var destination = null;
       var moves       = [];
+
+      // Black's move
+      if(pgn == '..') return true;
 
       // White Win
       if(pgn == '1-0') return true;
