@@ -35,44 +35,54 @@ var pgnReader = function(){
        movelist = content.replace(/\[.*\]/g, '');
        movelist = movelist.trim();
 
-      // FIXME Almost there!  Need to be able to parse continuation lines...that is, when a line represents a black move only
-      // This might be a good time to convert a 'move' to a psuedo-object containing meta information, such as move #, turn, etc.
+       // Pull result line off
+       movelist = movelist.replace(/(1\-0|0-1)/, '');
+       console.log(movelist);
 
-      lines = movelist.match(/\d+\.(\s)?(\.\.|([\w\-\+]+))\s?([\w\-\+]+)?(\s)?(\{[^\{\}]\})?\n?/g);
+      lines         = movelist.split(/\d+\./);
+      compact_lines = [];
+
+      lines.forEach(function(l, idx){ var trimmed = l.trim(); if(trimmed != "") compact_lines[idx] = trimmed;  });
       self  = this;
+
+      var line_number   = 0;
       
-      lines.forEach(function(line){
+      compact_lines.forEach(function(line, idx){
+        idx  = idx - 1;
+        var move_info   = {
+          white: null,
+          black: null,
+          comment: null,
+          number: null
+        };
+
+
         var match_for_white;
         var match_for_black;
+        var move_comment;
         
-        var move_info   = {};
-        continuation    = line.match(/^\d+\.\.\./);
+        match_for_white        = line.match(/^([abcdefghKQBNRxO\-1-8]+)/);
+        match_for_black        = line.match(/^([abcdefghKQBNRxO\-1-8]+)\s([abcdefghKQBNRxO\-1-8]+)/);
+        continuation_for_black = line.match(/^\.\.([abcdefghKQBNRxO\-1-8]+)/);
+        move_comment           = line.match(/\{(.*)\}/);
 
-        if(continuation){
-          match_for_black = line.match(/^\d+\.\.\.([\w\-\+]+)/)[1];
-        }else{
-          match_for_white = line.match(/^\d+\.\s?([\w\-\+]+)/)[1];
-          match_for_black = line.match(/^\d+\.\s?([\w\-\+]+)\s([\w\-\+]+)?(\n)?/)[2]
-        }
+
+        if(!continuation_for_black) line_number += 1; 
         
-        if(match_for_white){
-          move_info['white'] = match_for_white;
-          self.plys.push(match_for_white);
-        } 
-        if(match_for_black){
-          move_info['black'] = match_for_black; 
-          self.plys.push(match_for_black);
-        } 
+        move_info['number'] = line_number;
 
-        move_info['number'] = line.match(/^(\d+)\./)[1];
-
-        move_info['comment'] = line.match(/\{.*\}/);
-        move_info['raw']     = line;
+        if(match_for_white) move_info['white']        = match_for_white[1];
+        if(match_for_black) move_info['black']        = match_for_black[2];
+        if(continuation_for_black) move_info['black'] = continuation_for_black[1];
+        if(move_comment) move_info['comment']         = move_comment[1];
 
         self.moves.push(move_info);
-      });
-      
+        
+        if(move_info['white']) self.plys.push({movetext: move_info['white'], moveindex: idx});
+        if(move_info['black']) self.plys.push({movetext: move_info['black'], moveindex: idx});
 
+      });
+      return this.moves;
     },
 
     decodePGN: function(pgn, side){

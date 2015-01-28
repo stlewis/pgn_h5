@@ -49,6 +49,8 @@
     </textarea>
     <button name='parsePGN' onclick='parsePGN()'>Parse PGN</button>
     <button name='advance' onclick='advancePGN()'>&gt;&gt;</button>
+    <h2>Comments</h2>
+    <textarea id='movecomment' style='height: 200px; width: 400px;' readonly='true'></textarea>
 
 
 
@@ -58,7 +60,7 @@
       board                = chessBoard().init('board');
       board.light_square   = 'tan';
       board.dark_square    = 'olive';
-      board.square_width   = '100';
+      board.square_width   = '40';
       board.draw();
       board.set();
 
@@ -72,12 +74,21 @@
         document.getElementById('black_player').innerHTML = reader.black;
       }
 
-      move_idx = 0;
       turn = 'white';
-      
       function advancePGN(){
-        movetext = reader.plys.shift();
+        var current_ply  = reader.plys.shift();
+        if(!current_ply) return true;
+        var movetext     = current_ply.movetext;
+        var current_move = reader.moves[current_ply.moveindex];
+
+        if(current_move.comment){
+          document.getElementById('movecomment').value = current_move.comment;
+        }else{
+          document.getElementById('movecomment').value = '';
+        }
+
         if(movetext){
+          console.log(current_move);
           console.log(movetext + ' ' + turn);
           moves = reader.decodePGN(movetext, turn);
           if(moves == true)  return true;
